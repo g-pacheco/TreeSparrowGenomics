@@ -1,0 +1,382 @@
+### The BEGINNING ~~~~~
+##
+# TreeSparrowGenomics--PCA | First written by Homère J. Alves Monteiro with later modifications by George Pacheco ~
+
+
+# Cleans the environment ~ 
+rm(list=ls())
+
+
+# Sets working directory ~
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+
+# Loads required packages ~
+pacman::p_load(optparse, tidyverse, plyr, RColorBrewer, extrafont, ggforce, ggstar, ggrepel, RcppCNPy, reshape2, lemon, plotly,
+               gridExtra, grid, cowplot, patchwork, ggpubr, rphylopic, emojifont, ggtext)
+
+library(emojifont)
+
+
+# Loads data ~
+dataauto <- as.matrix(read.table("TreeSparrowGenomics.OnlyAutosomes.cov"), header = FALSE, stringsAsFactors = FALSE)
+
+
+# Loads Annot ~
+annot <- read.table("TreeSparrowGenomics.labels", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+
+
+# Runs PCA ~
+PCAauto <- eigen(dataauto)
+
+
+# Merges the first 3 PCs with annot ~
+PCAauto_Annot <- as.data.frame(cbind(annot, PCAauto$vectors[, c(1:3)])); colnames(PCAauto_Annot) <- c("Sample_ID", "PCA_1", "PCA_2", "PCA_3")
+
+
+# Merges the first 3 PCs with annot ~
+PCAauto_Annot$CHR <- "Autosomes"
+#PCAsex_Annot$CHR <- "Allosome (Z)"
+
+
+# Binds the 2 DFs based on common columns ~
+#fulldf <- rbind(PCAauto_Annot, PCAsex_Annot)
+#fulldf <- rbind(PCAauto_Annot)
+
+
+# Expands PCA_Annot by adding Population ~
+PCAauto_Annot$Population <- ifelse(grepl("Aizawl", PCAauto_Annot$Sample_ID), "Aizawl",
+                            ifelse(grepl("Eastermar", PCAauto_Annot$Sample_ID), "Eastermar",
+                            ifelse(grepl("PMON2002KOR0002U", PCAauto_Annot$Sample_ID), "Gyeonggi",
+                            ifelse(grepl("TreeSparrow_01", PCAauto_Annot$Sample_ID), "Corsica",
+                            ifelse(grepl("PHL", PCAauto_Annot$Sample_ID), "Bulacan",
+                            ifelse(grepl("TreeSparrow", PCAauto_Annot$Sample_ID), "Malta",
+                            ifelse(grepl("Zhabagly", PCAauto_Annot$Sample_ID), "Zhabagly", "Japan")))))))
+
+
+# Fixes Japanese population ~
+PCAauto_Annot$Population <- ifelse(PCAauto_Annot$Sample_ID %in% c("PMON2011JPN0001U", "PMON2011JPN0002U", "PMON2011JPN0003U", "PMON2011JPN0004U", "PMON2011JPN0005U",
+                                                                  "PMON2011JPN0006U", "PMON2011JPN0007U"), "Fukushima",
+                            ifelse(PCAauto_Annot$Sample_ID %in% c("PMON1981JPN0001M", "PMON2000JPN0001U", "PMON2001JPN0001F", "PMON2004JPN0001M", "PMON2006JPN0002F",
+                                                                  "PMON2007JPN0001M", "PMONXXXXJPN0001M"), "Hokkaido",
+                            ifelse(PCAauto_Annot$Sample_ID %in% c("PMON2014JPN0002U", "PMON2016JPN0001U", "PMON2016JPN0002M", "PMON2016JPN0003F", "PMON2016JPN0004U"), "Ibaraki",
+                            ifelse(PCAauto_Annot$Sample_ID %in% c("PMON2008JPN0002U", "PMON2008JPN0003M"), "Kagoshima",
+                            ifelse(PCAauto_Annot$Sample_ID %in% c("PMON2009JPN0001M", "PMON2009JPN0002M"), "Okinawa",
+                            ifelse(PCAauto_Annot$Sample_ID %in% c("PMON1995JPN0001U", "PMON1995JPN0002U", "PMON2005JPN0001U"), "Osaka",
+                            PCAauto_Annot$Population))))))
+
+
+# Fixes Tokyo population ~
+PCAauto_Annot$Population <- ifelse(grepl("Japan", PCAauto_Annot$Population), "Tokyo", PCAauto_Annot$Population)
+
+
+# Reorders Population ~
+PCAauto_Annot$Population <- factor(PCAauto_Annot$Population, ordered = T,
+                                   levels = c("Eastermar",
+                                              "Malta",
+                                              "Corsica",
+                                              "Zhabagly",
+                                              "Bulacan",
+                                              "Kagoshima",
+                                              "Okinawa",
+                                              "Gyeonggi",
+                                              "Hokkaido",
+                                              "Fukushima",
+                                              "Ibaraki",
+                                              "Tokyo",
+                                              "Osaka",
+                                              "Aizawl"))
+
+
+# Expands PCA_Annot by adding Country ~
+PCAauto_Annot$Country <- ifelse(PCAauto_Annot$Population %in% c("Eastermar"), "Netherlands",
+                         ifelse(PCAauto_Annot$Population %in% c("Corsica"), "France",
+                         ifelse(PCAauto_Annot$Population %in% c("Malta"), "Malta",
+                         ifelse(PCAauto_Annot$Population %in% c("Zhabagly"), "Kazakhstan",
+                         ifelse(PCAauto_Annot$Population %in% c("Aizawl"), "India 🇮🇳",
+                         ifelse(PCAauto_Annot$Population %in% c("Bulacan"), "Philippines",
+                         ifelse(PCAauto_Annot$Population %in% c("Kagoshima", "Okinawa", "Hokkaido", "Fukushima",  "Ibaraki", "Tokyo", "Osaka"), "Japan",
+                         ifelse(PCAauto_Annot$Population %in% c("Gyeonggi"), "South Korea", PCAauto_Annot$Population))))))))
+
+
+# Reorders Population ~
+PCAauto_Annot$Country <- factor(PCAauto_Annot$Country, ordered = T,
+                                levels = c("Netherlands",
+                                           "France",
+                                           "Malta",
+                                           "Kazakhstan",
+                                           "India 🇮🇳",
+                                           "Philippines",
+                                           "South Korea",
+                                           "Japan"))
+
+
+# Defines the shapes to be used for each Group ~
+Shapes <- as.vector(c(1, 2, 11, 4, 5, 23, 15, 14))
+
+
+# Creates legend plot ~
+MyLegend_Plot <-
+  ggplot(data = PCAauto_Annot, aes_string(x = "PCA_1", y = "PCA_2")) +
+  geom_star(aes(fill = Population, starshape = Country), size = 2.85, starstroke = .1, alpha = .7) +
+  scale_fill_manual(values = c("#d7301f", "#fc8d59", "#fdcc8a", "#fef0d9",
+                               "#0570b0", "#74a9cf", "#c7e9c0", "#bdc9e1", "#f1eef6",
+                               "#67001f", "#980043", "#dd1c77", "#df65b0", "#d7b5d8" )) +
+  scale_starshape_manual(values = Shapes) +
+  theme(panel.background = element_rect(fill = "#ffffff"),
+        panel.border = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        legend.position = "right",
+        legend.key = element_blank(),
+        legend.background = element_blank(),
+        legend.margin = margin(t = 0, b = 0, r = 15, l = 15),
+        legend.box = "vertical",
+        legend.box.margin = margin(t = 20, b = 30, r = 0, l = 0)) +
+  guides(starshape = guide_legend(title = "Country", title.theme = element_text(size = 14.5, face = "bold"),
+                                  label.theme = element_text(size = 15),
+                                  override.aes = list(starshape = Shapes, size = 3.5, starstroke = .1), ncol = 1, order = 1),
+         fill = guide_legend(title = "Population", title.theme = element_text(size = 14.5, face = "bold"),
+                             label.theme = element_text(size = 15),
+                             override.aes = list(starshape = 21, size = 3.5, starstroke = .1), ncol = 1, order = 2),
+         colour = "none")
+
+
+MyLegend_Plot +
+  scale_color_manual(
+    values = c("😀 Group 1" = "red", "😄 Group 2" = "blue"),
+    labels = c("😀 Group 1", "😄 Group 2")
+  ) +
+  theme(legend.text = element_markdown())
+
+
+all_data = read_csv(paste0('https://raw.githubusercontent.com/rensa/steamtrain/',
+                           'gh-pages/data/gapminder-berkeley-tidy.csv'))
+year_start = 1900
+year_end = 2012
+frames_per_year = 30
+
+ggplot(all_data[1:10,]) +
+  geom_text(
+    aes(
+      x = gdppc,
+      y = co2_cum,
+      label = flag_emoji),
+    family = 'EmojiOne', 
+    size = 8)
+
+
+# Gets Eigenvalues of each Eigenvectors ~
+PCAauto_Eigenval_Sum <- sum(PCAauto$values)
+(PCAauto$values[1]/PCAauto_Eigenval_Sum)*100
+(PCAauto$values[2]/PCAauto_Eigenval_Sum)*100
+(PCAauto$values[3]/PCAauto_Eigenval_Sum)*100
+
+
+# Gets PCA 1 X PCA 2 ~ 
+PCAauto_12 <-
+  ggplot(data = PCAauto_Annot, aes_string(x = "PCA_1", y = "PCA_2")) +
+  geom_star(aes(fill = Population, starshape = Country), size = 2.85, starstroke = .1, alpha = .7) +
+  scale_fill_manual(values = c("#d7301f", "#fc8d59", "#fdcc8a", "#fef0d9",
+                               "#0570b0", "#74a9cf", "#c7e9c0", "#bdc9e1", "#f1eef6",
+                               "#67001f", "#980043", "#dd1c77", "#df65b0", "#d7b5d8" )) +
+  scale_starshape_manual(values = Shapes) +
+  scale_x_continuous("PC 1 (7.1%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0.0", "0.1"),
+                     limits = c(-.205, .145),
+                     expand = c(0, 0)) +
+  scale_y_continuous("PC 2 (6.0%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0", "0.1"),
+                     limits = c(-.29, .155),
+                     expand = c(0, 0)) +
+  theme(panel.background = element_rect(fill = "#ffffff"),
+        panel.border = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        legend.position = "none",
+        legend.key = element_blank(),
+        axis.title.x = element_text(size = 13.5, face = "bold", margin = margin(t = 20, r = 0, b = 0, l = 0)),
+        axis.title.y = element_text(size = 13.5, face = "bold", margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(color = "#000000", size = 11, face = "bold"),
+        axis.ticks = element_line(color = "#000000", linewidth = .3),
+        strip.text = element_text(colour = "#000000", size = 13, face = "bold"),
+        strip.background = element_rect(colour = "#000000", fill = "#d6d6d6", linewidth = .3),
+        axis.line = element_line(colour = "#000000", linewidth = .3))
+
+
+# Gets PCA 1 X PCA 3 ~ 
+PCAauto_13 <-
+  ggplot(data = PCAauto_Annot, aes_string(x = "PCA_1", y = "PCA_3")) +
+  geom_star(aes(fill = Population, starshape = Country), size = 2.85, starstroke = .1, alpha = .7) +
+  scale_fill_manual(values = c("#d7301f", "#fc8d59", "#fdcc8a", "#fef0d9",
+                               "#0570b0", "#74a9cf", "#c7e9c0", "#bdc9e1", "#f1eef6",
+                               "#67001f", "#980043", "#dd1c77", "#df65b0", "#d7b5d8" )) +
+  scale_starshape_manual(values = Shapes) +
+  scale_x_continuous("PC 1 (7.1%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0.0", "0.1"),
+                     limits = c(-.205, .145),
+                     expand = c(0, 0)) +
+  scale_y_continuous("PC 3 (2.9%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0", "0.1"),
+                     limits = c(-.29, .155),
+                     expand = c(0, 0)) +
+  theme(panel.background = element_rect(fill = "#ffffff"),
+        panel.border = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        legend.position = "none",
+        legend.key = element_blank(),
+        axis.title.x = element_text(size = 15, face = "bold", margin = margin(t = 20, r = 0, b = 0, l = 0)),
+        axis.title.y = element_text(size = 15, face = "bold", margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(color = "#000000", size = 11, face = "bold"),
+        axis.ticks = element_line(color = "#000000", linewidth = .3),
+        strip.text = element_text(colour = "#000000", size = 13, face = "bold"),
+        strip.background = element_rect(colour = "#000000", fill = "#d6d6d6", linewidth = .3),
+        axis.line = element_line(colour = "#000000", linewidth = .3))
+
+
+# Gets PCA 2 X PCA 3 ~ 
+PCAauto_23 <-
+  ggplot(data = PCAauto_Annot, aes_string(x = "PCA_2", y = "PCA_3")) +
+  geom_star(aes(fill = Population, starshape = Country), size = 2.85, starstroke = .1, alpha = .7) +
+  scale_fill_manual(values = c("#d7301f", "#fc8d59", "#fdcc8a", "#fef0d9",
+                               "#0570b0", "#74a9cf", "#c7e9c0", "#bdc9e1", "#f1eef6",
+                               "#67001f", "#980043", "#dd1c77", "#df65b0", "#d7b5d8" )) +
+  scale_starshape_manual(values = Shapes) +
+  scale_x_continuous("PC 2 (6.0%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0.0", "0.1"),
+                     limits = c(-.205, .145),
+                     expand = c(0, 0)) +
+  scale_y_continuous("PC 3 (2.9%)",
+                     breaks = c(-.2, -.1, 0, .1), 
+                     labels = c("-0.2", "-0.1", "0", "0.1"),
+                     limits = c(-.29, .155),
+                     expand = c(0, 0)) +
+  theme(panel.background = element_rect(fill = "#ffffff"),
+        panel.border = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        legend.position = "none",
+        legend.key = element_blank(),
+        axis.title.x = element_text(size = 15, face = "bold", margin = margin(t = 20, r = 0, b = 0, l = 0)),
+        axis.title.y = element_text(size = 15, face = "bold", margin = margin(t = 0, r = 20, b = 0, l = 0)),
+        axis.text.x = element_text(color = "#000000", size = 11, face = "bold"),
+        axis.text.y = element_text(color = "#000000", size = 11, face = "bold"),
+        axis.ticks = element_line(color = "#000000", linewidth = .3),
+        strip.text = element_text(colour = "#000000", size = 13, face = "bold"),
+        strip.background = element_rect(colour = "#000000", fill = "#d6d6d6", linewidth = .3),
+        axis.line = element_line(colour = "#000000", linewidth = .3))
+
+
+# Isolates legend ~
+MyLegend <- get_legend(MyLegend_Plot)
+
+
+# Gets final plot ~
+PCA_Plot <- ggarrange(PCAauto_12, PCAauto_13, PCAauto_23, nrow = 3, legend.grob = MyLegend, legend = "right")
+
+
+# Saves plot ~
+ggsave(PCA_Plot, file = "TreeSparrowGenomics--PCA_Autosomes.pdf",
+       device = cairo_pdf, limitsize = FALSE, scale = 1, width = 14, height = 12, dpi = 600)
+ggsave(PCA_Plot, file = "TreeSparrow--PCA_Autosomes.jpeg",
+       limitsize = FALSE, scale = 1, width = 10, height = 12, dpi = 600)
+
+
+
+PCAsex_Eigenval_Sum <- sum(PCAsex$values)
+(PCAsex$values[1]/PCAsex_Eigenval_Sum)*100
+(PCAsex$values[2]/PCAsex_Eigenval_Sum)*100
+(PCAsex$values[3]/PCAsex_Eigenval_Sum)*100
+
+
+
+#scale_starshape_manual(values = Shapes_2) +
+geom_label_repel(data = subset(fulldf, CHR == "Autosomes"), aes(label = Labels),
+                 family = ".SF Compact Rounded", size = 3.8, fontface = "bold", max.overlaps = 100, nudge_x = .055, nudge_y = .05,
+                 point.padding = .6, segment.size = .3, colour = "black", fill = "#d9d9d9", alpha = .85,
+                 arrow = arrow(angle = 30, length = unit(.10, "inches"),
+                               ends = "last", type = "open")) +
+  geom_mark_ellipse(aes(filter = Species == "House", label = "House\nSparrow"), con.colour = "#1E90FF", colour = "#1E90FF",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "straight", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+  geom_mark_ellipse(aes(filter = Species == "Spanish", label = "Spanish\nSparrow"), con.colour = "#ee0000", colour = "#ee0000",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+  geom_mark_ellipse(aes(filter = Species == "Italian", label = "Italian\nSparrow"), con.colour = "#FFD700", colour = "#FFD700",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+
+
+PCAsex_12 <-
+  ggplot(data = subset(fulldf, CHR == "Allosome (Z)"), aes_string(x = "PCA_1", y = "PCA_2")) +
+  geom_star(aes(starshape = Population, fill = Species), alpha = .7, size = 2.8, starstroke = .15) +
+  facet_rep_grid(CHR ~. , scales = "free_x") +
+  scale_fill_manual(values = c("#1E90FF", "#FFD700", "#ee0000", "#d9d9d9")) +
+  scale_starshape_manual(values = Shapes_2) +
+  geom_label_repel(data = subset(fulldf, CHR == "Allosome (Z)"), aes(label = Labels),
+                   family = ".SF Compact Rounded", size = 3.8, fontface = "bold", max.overlaps = 100, nudge_x = .055, nudge_y = .25,
+                   point.padding = .6, segment.size = .3, colour = "black", fill = "#d9d9d9", alpha = .85,
+                   arrow = arrow(angle = 30, length = unit(.10, "inches"),
+                                 ends = "last", type = "open")) +
+  geom_mark_ellipse(aes(filter = Species == "House", label = "House\nSparrow"), con.colour = "#1E90FF", colour = "#1E90FF",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "straight", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+  geom_mark_ellipse(aes(filter = Species == "Spanish", label = "Spanish\nSparrow"), con.colour = "#ee0000", colour = "#ee0000",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+  geom_mark_ellipse(aes(filter = Species == "Italian", label = "Italian\nSparrow"), con.colour = "#FFD700", colour = "#FFD700",
+                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
+                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
+  scale_x_continuous("PC 1 (19.0%)",
+  #scale_x_continuous("PC 1 (9.1%)",
+                     #breaks = c(0.99, 1, 1.01),
+                     #labels = c("0.99", "1", "1.01"),
+                     limits = c(-.21, .21),
+                     expand = c(0, 0)) +
+  scale_y_continuous("PC 2 (6.7%)",
+  #scale_y_continuous("PC 2 (3.8%)",
+                     #breaks = c(-.08, -.04, 0.00), 
+                     #labels = c("-0.08", "-0.04", "0.00"),
+                     limits = c(-.7, .35),
+                     expand = c(0, 0)) +
+  theme(panel.background = element_rect(fill = "#ffffff"),
+        panel.border = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.grid.major = element_blank(),
+        legend.position = "none",
+        axis.title.x = element_text(size = 15, face = "bold", margin = margin(t = 18, r = 0, b = 0, l = 0)),
+        axis.title.y = element_text(size = 15, face = "bold", margin = margin(t = 0, r = 18, b = 0, l = 0)),
+        axis.text.x = element_text(color = "#000000", size = 11, face = "bold", angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(color = "#000000", size = 11, face = "bold"),
+        axis.ticks = element_line(color = "#000000", linewidth = .3),
+        strip.text = element_text(colour = "#000000", size = 13, face = "bold"),
+        strip.background = element_rect(colour = "#000000", fill = "#d6d6d6", linewidth = .3),
+        axis.line = element_line(colour = "#000000", linewidth = .3))
+
+
+# Isolates legend ~
+MyLegendBlog <- get_legend(MyLegend_Plot)
+
+
+# Gets final plot ~
+PCA_Plot <- ggarrange(PCAauto_12, PCAsex_12, nrow = 3, legend.grob = MyLegendBlog)
+
+
+# Saves plot ~
+ggsave(PCA_Plot, file = "TreeSparrowGenomics.pdf",
+       device = cairo_pdf, limitsize = FALSE, scale = 1.1, width = 11, height = 11, dpi = 600)
+ggsave(PCA_Plot, file = "Presentation.jpeg",
+      limitsize = FALSE, scale = 1.1, width = 11, height = 11, dpi = 600)
+
+
+#
+##
+### The END ~~~~~
