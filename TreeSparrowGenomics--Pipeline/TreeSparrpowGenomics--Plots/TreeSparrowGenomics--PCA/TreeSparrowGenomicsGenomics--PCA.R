@@ -93,7 +93,7 @@ PCAauto_Annot$Country <- ifelse(PCAauto_Annot$Population %in% c("Eastermar"), "N
                          ifelse(PCAauto_Annot$Population %in% c("Corsica"), "France",
                          ifelse(PCAauto_Annot$Population %in% c("Malta"), "Malta",
                          ifelse(PCAauto_Annot$Population %in% c("Zhabagly"), "Kazakhstan",
-                         ifelse(PCAauto_Annot$Population %in% c("Aizawl"), "India 🇮🇳",
+                         ifelse(PCAauto_Annot$Population %in% c("Aizawl"), "India",
                          ifelse(PCAauto_Annot$Population %in% c("Bulacan"), "Philippines",
                          ifelse(PCAauto_Annot$Population %in% c("Kagoshima", "Okinawa", "Hokkaido", "Fukushima",  "Ibaraki", "Tokyo", "Osaka"), "Japan",
                          ifelse(PCAauto_Annot$Population %in% c("Gyeonggi"), "South Korea", PCAauto_Annot$Population))))))))
@@ -105,7 +105,7 @@ PCAauto_Annot$Country <- factor(PCAauto_Annot$Country, ordered = T,
                                            "France",
                                            "Malta",
                                            "Kazakhstan",
-                                           "India 🇮🇳",
+                                           "India",
                                            "Philippines",
                                            "South Korea",
                                            "Japan"))
@@ -140,30 +140,6 @@ MyLegend_Plot <-
                              label.theme = element_text(size = 15),
                              override.aes = list(starshape = 21, size = 3.5, starstroke = .1), ncol = 1, order = 2),
          colour = "none")
-
-
-MyLegend_Plot +
-  scale_color_manual(
-    values = c("😀 Group 1" = "red", "😄 Group 2" = "blue"),
-    labels = c("😀 Group 1", "😄 Group 2")
-  ) +
-  theme(legend.text = element_markdown())
-
-
-all_data = read_csv(paste0('https://raw.githubusercontent.com/rensa/steamtrain/',
-                           'gh-pages/data/gapminder-berkeley-tidy.csv'))
-year_start = 1900
-year_end = 2012
-frames_per_year = 30
-
-ggplot(all_data[1:10,]) +
-  geom_text(
-    aes(
-      x = gdppc,
-      y = co2_cum,
-      label = flag_emoji),
-    family = 'EmojiOne', 
-    size = 8)
 
 
 # Gets Eigenvalues of each Eigenvectors ~
@@ -285,9 +261,9 @@ PCA_Plot <- ggarrange(PCAauto_12, PCAauto_13, PCAauto_23, nrow = 3, legend.grob 
 
 # Saves plot ~
 ggsave(PCA_Plot, file = "TreeSparrowGenomics--PCA_Autosomes.pdf",
-       device = cairo_pdf, limitsize = FALSE, scale = 1, width = 14, height = 12, dpi = 600)
-ggsave(PCA_Plot, file = "TreeSparrow--PCA_Autosomes.jpeg",
-       limitsize = FALSE, scale = 1, width = 10, height = 12, dpi = 600)
+       device = cairo_pdf, limitsize = FALSE, scale = 1, width = 14, height = 14, dpi = 600)
+ggsave(PCA_Plot, file = "TreeSparrow--PCA_Autosomes_Autosomes.jpeg",
+       limitsize = FALSE, scale = 1, width = 14, height = 14, dpi = 600)
 
 
 
@@ -295,24 +271,6 @@ PCAsex_Eigenval_Sum <- sum(PCAsex$values)
 (PCAsex$values[1]/PCAsex_Eigenval_Sum)*100
 (PCAsex$values[2]/PCAsex_Eigenval_Sum)*100
 (PCAsex$values[3]/PCAsex_Eigenval_Sum)*100
-
-
-
-#scale_starshape_manual(values = Shapes_2) +
-geom_label_repel(data = subset(fulldf, CHR == "Autosomes"), aes(label = Labels),
-                 family = ".SF Compact Rounded", size = 3.8, fontface = "bold", max.overlaps = 100, nudge_x = .055, nudge_y = .05,
-                 point.padding = .6, segment.size = .3, colour = "black", fill = "#d9d9d9", alpha = .85,
-                 arrow = arrow(angle = 30, length = unit(.10, "inches"),
-                               ends = "last", type = "open")) +
-  geom_mark_ellipse(aes(filter = Species == "House", label = "House\nSparrow"), con.colour = "#1E90FF", colour = "#1E90FF",
-                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
-                    con.type = "straight", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
-  geom_mark_ellipse(aes(filter = Species == "Spanish", label = "Spanish\nSparrow"), con.colour = "#ee0000", colour = "#ee0000",
-                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
-                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
-  geom_mark_ellipse(aes(filter = Species == "Italian", label = "Italian\nSparrow"), con.colour = "#FFD700", colour = "#FFD700",
-                    label.fill = "#d9d9d9", expand = unit(4, "mm"), con.border = "one", label.fontsize = 10.65,
-                    con.type = "elbow", label.family = ".SF Compact Rounded", con.cap = 0, label.hjust = .5, show.legend = FALSE) +
 
 
 PCAsex_12 <-

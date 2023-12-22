@@ -17,8 +17,8 @@ library(lemon)
 
 
 # Loads datasets ~
-Stats <- read.table("TreeSparrow--Stats.txt", sep = "\t", header = TRUE,
-                    stringsAsFactors = FALSE)
+Stats <- read.csv("TreeSparrow--Stats.txt", sep = "\t", header = TRUE,
+                    stringsAsFactors = TRUE)
 Adaptors <- read.table("TreeSparrow--Stats_Adaptors.txt", sep = "\t", header = FALSE,
                        stringsAsFactors = FALSE); colnames(Adaptors) <- c("Sample_ID", "reads_adaptors")
 
@@ -40,62 +40,102 @@ fulldf$reads_adaptors <-
 
 
 # Fixes percentages ~
-fulldf$hits_raw_frac <- fulldf$hits_raw_frac * 100
-fulldf$hits_clonality <- fulldf$hits_clonality  * 100
-fulldf$hits_unique_frac <- fulldf$hits_unique_frac * 100
+fulldf$hits_raw_frac_HouseSparrow <- fulldf$hits_raw_frac_HouseSparrow * 100
+fulldf$hits_clonality_HouseSparrow <- fulldf$hits_clonality_HouseSparrow  * 100
+fulldf$hits_unique_frac_HouseSparrow <- fulldf$hits_unique_frac_HouseSparrow * 100
+fulldf$hits_raw_frac_TreeSparrow <- fulldf$hits_raw_frac_TreeSparrow * 100
+fulldf$hits_clonality_TreeSparrow <- fulldf$hits_clonality_TreeSparrow  * 100
+fulldf$hits_unique_frac_TreeSparrow <- fulldf$hits_unique_frac_TreeSparrow * 100
 
 
 # Expands PCA_Annot by adding Population ~
 fulldf$Population <- ifelse(grepl("Aizawl", fulldf$Sample_ID), "Aizawl",
                      ifelse(grepl("Eastermar", fulldf$Sample_ID), "Eastermar",
-                     ifelse(grepl("PMON2002KOR0002U", fulldf$Sample_ID), "South Korea",
-                     ifelse(grepl("PMON", fulldf$Sample_ID), "Japan",
+                     ifelse(grepl("PMON2002KOR0002U", fulldf$Sample_ID), "Gyeonggi",
+                     ifelse(grepl("TreeSparrow_01", fulldf$Sample_ID), "Corsica",
+                     ifelse(grepl("PHL", fulldf$Sample_ID), "Bulacan",
                      ifelse(grepl("TreeSparrow", fulldf$Sample_ID), "Malta",
-                     ifelse(grepl("Zhabagly", fulldf$Sample_ID), "Zhabagly",
-                     ifelse(grepl("PHL", fulldf$Sample_ID), "Philippines", "Error")))))))
+                     ifelse(grepl("Zhabagly", fulldf$Sample_ID), "Zhabagly", "Japan")))))))
+
+
+# Fixes Japanese population ~
+fulldf$Population <- ifelse(fulldf$Sample_ID %in% c("PMON2011JPN0001U", "PMON2011JPN0002U", "PMON2011JPN0003U", "PMON2011JPN0004U", "PMON2011JPN0005U",
+                                                    "PMON2011JPN0006U", "PMON2011JPN0007U"), "Fukushima",
+                     ifelse(fulldf$Sample_ID %in% c("PMON1981JPN0001M", "PMON2000JPN0001U", "PMON2001JPN0001F", "PMON2004JPN0001M", "PMON2006JPN0002F",
+                                                    "PMON2007JPN0001M", "PMONXXXXJPN0001M"), "Hokkaido",
+                     ifelse(fulldf$Sample_ID %in% c("PMON2014JPN0002U", "PMON2016JPN0001U", "PMON2016JPN0002M", "PMON2016JPN0003F", "PMON2016JPN0004U"), "Ibaraki",
+                     ifelse(fulldf$Sample_ID %in% c("PMON2008JPN0002U", "PMON2008JPN0003M"), "Kagoshima",
+                     ifelse(fulldf$Sample_ID %in% c("PMON2009JPN0001M", "PMON2009JPN0002M"), "Okinawa",
+                     ifelse(fulldf$Sample_ID %in% c("PMON1995JPN0001U", "PMON1995JPN0002U", "PMON2005JPN0001U"), "Osaka", fulldf$Population))))))
+
+
+# Fixes Tokyo population ~
+fulldf$Population <- ifelse(grepl("Japan", fulldf$Population), "Tokyo", fulldf$Population)
 
 
 # Reorders Population ~
 fulldf$Population <- factor(fulldf$Population, ordered = T,
-                            levels = c("Eastermar",
-                                       "Malta",
-                                       "Zhabagly",
-                                       "Aizawl",
-                                       "Philippines",
-                                       "South Korea",
-                                       "Japan"))
+                                   levels = c("Eastermar",
+                                              "Malta",
+                                              "Corsica",
+                                              "Zhabagly",
+                                              "Bulacan",
+                                              "Kagoshima",
+                                              "Okinawa",
+                                              "Gyeonggi",
+                                              "Hokkaido",
+                                              "Fukushima",
+                                              "Ibaraki",
+                                              "Tokyo",
+                                              "Osaka",
+                                              "Aizawl"))
 
 # Cleans DF ~
 fulldf <- fulldf %>%
-          select(Population, total_reads, reads_adaptors, percentage_retained_reads,
-                 hits_raw_frac, hits_clonality, hits_unique_frac, hits_coverage)
+          select(Sample_ID, Population, total_reads, reads_adaptors, percentage_retained_reads,
+                 hits_raw_frac_HouseSparrow, hits_clonality_HouseSparrow, hits_unique_frac_HouseSparrow, hits_coverage_HouseSparrow,
+                 hits_raw_frac_TreeSparrow, hits_clonality_TreeSparrow, hits_unique_frac_TreeSparrow, hits_coverage_TreeSparrow)
+
+
+fulldf <- fulldf %>%
+  filter(!is.na(hits_coverage_TreeSparrow))
 
 
 # Converts DF from wide into long ~
-#fulldfUp <- gather(fulldf, Stat, Value, "total_reads", "reads_adaptors", "percentage_retained_reads",
-#                   "hits_raw_frac", "hits_clonality", "hits_unique_frac", "hits_coverage")
-# Converts DF from wide into long ~
-fulldfUp <- gather(fulldf, Stat, Value, "total_reads", "percentage_retained_reads",
-                                        "hits_unique_frac", "hits_coverage")
+fulldfUp <- gather(fulldf, Stat, Value, "total_reads", "reads_adaptors", "percentage_retained_reads",
+                                        "hits_raw_frac_HouseSparrow", "hits_raw_frac_TreeSparrow",
+                                        "hits_clonality_HouseSparrow", "hits_clonality_TreeSparrow",
+                                        "hits_unique_frac_HouseSparrow", "hits_coverage_HouseSparrow",
+                                        "hits_unique_frac_TreeSparrow", "hits_coverage_TreeSparrow")
+
+
+# Expands fulldf by adding REF ~
+fulldfUp$REF <- ifelse(grepl("HouseSparrow", fulldfUp$Stat), "House",
+                ifelse(grepl("TreeSparrow", fulldfUp$Stat), "Tree", NA))
+
+
+# Corrects Afastamento Motivos ~
+levels(fulldfUp$Stat <- sub("_HouseSparrow", "", fulldfUp$Stat))
+levels(fulldfUp$Stat <- sub("_TreeSparrow", "", fulldfUp$Stat))
 
 
 # Reorders Stat ~
 fulldfUp$Stat <- factor(fulldfUp$Stat, ordered = T,
                         levels = c("hits_coverage",
                                    "hits_unique_frac",
-                                   #"hits_clonality",
-                                   #"hits_raw_frac",
+                                   "hits_clonality",
+                                   "hits_raw_frac",
                                    "percentage_retained_reads",
-                                   #"reads_adaptors",
+                                   "reads_adaptors",
                                    "total_reads"))
 
 
 # Corrects facet labels ~
 ylabels <- c("total_reads" = "# of Reads",
-             #"reads_adaptors" = "% of Reads With Adaptors",
+             "reads_adaptors" = "% of Reads With Adaptors",
              "percentage_retained_reads" = "% of Reads Retained",
-             #"hits_raw_frac" = "% of Mapped Reads",
-             #"hits_clonality" = "% of Clonality",
+             "hits_raw_frac" = "% of Mapped Reads",
+             "hits_clonality" = "% of Clonality",
              "hits_unique_frac" = "% of Uniquely Mapped Reads",
              "hits_coverage" = "Mean Depth")
 
@@ -116,13 +156,13 @@ labels_fun <- function(z) {
 
 # Creates the panel ~
 TreeSparrowGenomics_Stat <- 
- ggplot() +
+ ggplot(fulldfUp, aes(x = Population, y = Value, fill = REF)) +
   #geom_violin(data = fulldfUp, aes(x = Population, y = Value),
   #            fill = "#ffffff", colour = "#000000", show.legend = FALSE, alpha = .9, size = .45, width = 1) +
-  geom_boxplot(data = fulldfUp, aes(x = Population, y = Value, fill = Population),
-               outlier.shape = NA, width = .5, lwd = .25, colour = "#000000", alpha = .7) +
+  geom_boxplot(position = "dodge", outlier.shape = NA, width = .5, lwd = .25, colour = "#000000", alpha = .7) +
   #stat_summary(data = fulldfUp, aes(x = Population, y = Value),  
   #             fun = mean, geom = "point", shape = 21, size = 2.5, alpha = 1, colour = "#000000", fill = "#df65b0") +
+  scale_fill_manual(values = c("#1E90FF", "#856D46"), na.translate = FALSE) + 
   facet_rep_grid(Stat ~. , scales = "free", labeller = labeller(Stat = ylabels)) +
   scale_y_continuous(#limits = limits_fun,
                      #breaks = breaks_fun,
@@ -134,32 +174,30 @@ TreeSparrowGenomics_Stat <-
         panel.spacing.y = unit(1, "cm"),
         axis.line = element_line(colour = "#000000", linewidth = .3),
         axis.title = element_blank(),
-        #axis.text.x = element_text(colour = "#000000", size = 12, face = "bold", angle = 45, vjust = 1, hjust = 1),
-        axis.text.x = element_blank(),
-        axis.text.y = element_text(color = "#000000", size = 12, face = "bold"),
-        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(colour = "#000000", size = 10, face = "bold", angle = 45, vjust = 1, hjust = 1),
+        #axis.text.x = element_blank(),
+        axis.text.y = element_text(color = "#000000", size = 8, face = "bold"),
+        axis.ticks.x = element_line(color = "#000000", linewidth = .3),
         axis.ticks.y = element_line(color = "#000000", linewidth = .3),
         strip.background.y = element_rect(colour = "#000000", fill = "#d6d6d6", linewidth = .3),
-        strip.text = element_text(colour = "#000000", size = 13.5, face = "bold"),
+        strip.text = element_text(colour = "#000000", size = 8, face = "bold"),
         legend.position = "top",
         legend.margin = margin(t = 0, b = 0, r = 0, l = 0),
         legend.box.margin = margin(t = 10, b = 20, r = 0, l = 0),
         legend.key = element_rect(fill = NA),
         legend.background = element_blank()) +
-  guides(fill = guide_legend(title = "Population", title.theme = element_text(size = 17, face = "bold"),
+  guides(fill = guide_legend(title = "Reference", title.theme = element_text(size = 17, face = "bold"),
                              label.theme = element_text(size = 16),
                              override.aes = list(starshape = 15, size = 4.25, alpha = .7, starstroke = .15), nrow = 1, order = 1),
          starshape = "none",
          colour = "none")
 
 
-ggplotly
-
 # Saves the panel ~
 ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats.pdf",
        device = cairo_pdf, width = 12, height = 16, scale = 1, dpi = 600)
 ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats.jpeg",
-       width = 12, height = 12, scale = 1, dpi = 600)
+       width = 12, height = 16, scale = 1, dpi = 600)
 
 
 #
