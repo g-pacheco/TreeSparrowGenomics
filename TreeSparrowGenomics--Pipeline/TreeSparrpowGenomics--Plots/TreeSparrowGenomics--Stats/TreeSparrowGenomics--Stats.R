@@ -90,15 +90,34 @@ fulldf$Population <- factor(fulldf$Population, ordered = T,
                                               "Osaka",
                                               "Aizawl"))
 
+
+# Expands PCA_Annot by adding Country ~
+fulldf$Country <- ifelse(fulldf$Population %in% c("Eastermar"), "Netherlands",
+                         ifelse(fulldf$Population %in% c("Corsica"), "France",
+                         ifelse(fulldf$Population %in% c("Malta"), "Malta",
+                         ifelse(fulldf$Population %in% c("Zhabagly"), "Kazakhstan",
+                         ifelse(fulldf$Population %in% c("Aizawl"), "India",
+                         ifelse(fulldf$Population %in% c("Bulacan"), "Philippines",
+                         ifelse(fulldf$Population %in% c("Kagoshima", "Okinawa", "Hokkaido", "Fukushima",  "Ibaraki", "Tokyo", "Osaka"), "Japan",
+                         ifelse(fulldf$Population %in% c("Gyeonggi"), "South Korea", fulldf$Population))))))))
+
+
+# Reorders Population ~
+fulldf$Country <- factor(fulldf$Country, ordered = T,
+                         levels = c("Netherlands",
+                                    "France",
+                                    "Malta",
+                                    "Kazakhstan",
+                                    "India",
+                                    "Philippines",
+                                    "South Korea",
+                                    "Japan"))
+
 # Cleans DF ~
 fulldf <- fulldf %>%
-          select(Sample_ID, Population, total_reads, reads_adaptors, percentage_retained_reads,
+          select(Sample_ID, Country, Population, total_reads, reads_adaptors, percentage_retained_reads,
                  hits_raw_frac_HouseSparrow, hits_clonality_HouseSparrow, hits_unique_frac_HouseSparrow, hits_coverage_HouseSparrow,
                  hits_raw_frac_TreeSparrow, hits_clonality_TreeSparrow, hits_unique_frac_TreeSparrow, hits_coverage_TreeSparrow)
-
-
-fulldf <- fulldf %>%
-  filter(!is.na(hits_coverage_TreeSparrow))
 
 
 # Converts DF from wide into long ~
@@ -156,7 +175,7 @@ labels_fun <- function(z) {
 
 # Creates the panel ~
 TreeSparrowGenomics_Stat <- 
- ggplot(fulldfUp, aes(x = Population, y = Value, fill = REF)) +
+ ggplot(fulldfUp, aes(x = Country, y = Value, fill = REF)) +
   #geom_violin(data = fulldfUp, aes(x = Population, y = Value),
   #            fill = "#ffffff", colour = "#000000", show.legend = FALSE, alpha = .9, size = .45, width = 1) +
   geom_boxplot(position = "dodge", outlier.shape = NA, width = .5, lwd = .25, colour = "#000000", alpha = .7) +
@@ -194,9 +213,9 @@ TreeSparrowGenomics_Stat <-
 
 
 # Saves the panel ~
-ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats.pdf",
+ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Country.pdf",
        device = cairo_pdf, width = 12, height = 16, scale = 1, dpi = 600)
-ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats.jpeg",
+ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Country.jpeg",
        width = 12, height = 16, scale = 1, dpi = 600)
 
 
