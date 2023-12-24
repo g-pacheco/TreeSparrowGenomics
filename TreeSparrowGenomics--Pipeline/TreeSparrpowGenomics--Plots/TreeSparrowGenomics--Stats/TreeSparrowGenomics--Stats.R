@@ -175,10 +175,10 @@ labels_fun <- function(z) {
 
 # Creates the panel ~
 TreeSparrowGenomics_Stat <- 
- ggplot(fulldfUp, aes(x = Country, y = Value, fill = REF)) +
+ ggplot(fulldfUp, aes(x = Population, y = Value, fill = REF)) +
   #geom_violin(data = fulldfUp, aes(x = Population, y = Value),
   #            fill = "#ffffff", colour = "#000000", show.legend = FALSE, alpha = .9, size = .45, width = 1) +
-  geom_boxplot(position = "dodge", outlier.shape = NA, width = .5, lwd = .25, colour = "#000000", alpha = .7) +
+  geom_boxplot(position = position_dodge(width = .55), outlier.shape = NA, width = .5, lwd = .25, colour = "#000000", alpha = .7) +
   #stat_summary(data = fulldfUp, aes(x = Population, y = Value),  
   #             fun = mean, geom = "point", shape = 21, size = 2.5, alpha = 1, colour = "#000000", fill = "#df65b0") +
   scale_fill_manual(values = c("#1E90FF", "#856D46"), na.translate = FALSE) + 
@@ -213,9 +213,9 @@ TreeSparrowGenomics_Stat <-
 
 
 # Saves the panel ~
-ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Country.pdf",
+ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Population.pdf",
        device = cairo_pdf, width = 12, height = 16, scale = 1, dpi = 600)
-ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Country.jpeg",
+ggsave(TreeSparrowGenomics_Stat, file = "TreeSparrowGenomics--Stats_Population.jpeg",
        width = 12, height = 16, scale = 1, dpi = 600)
 
 
